@@ -5,7 +5,7 @@ from ultralytics import YOLO
 model = YOLO("yolov8n.pt")
 
 # Define your fruit classes (adjust names as per model.names)
-fruit_classes = {"apple", "banana", "orange", "cellphone"}
+fruit_classes = {"apple", "banana", "orange"}
 
 cap = cv2.VideoCapture(0)
 
