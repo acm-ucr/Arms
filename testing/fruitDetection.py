@@ -6,7 +6,7 @@ from ultralytics import YOLO
 model = YOLO("yolov8n-seg.pt")
 
 # list of objects to detect
-detection_list = ["apple", "banana", "orange", "person"]
+detection_list = ["apple", "banana", "orange"]
 
 # camera currently in use is webcam
 cap = cv2.VideoCapture(0)
