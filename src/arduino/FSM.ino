@@ -41,7 +41,14 @@ void Tick(){
             break;
         case Approach:
             break;
-        case Grip:
+        case Grip: /* reach to this state when we reach to the object
+                      keep checking if ALL 4 pressure sensors are fully pressed down, when done send to
+                      lift state aka make pressure_reached = true
+                      if not reach, continue incrementing 
+                      [3, 0/1, 0/1, 0/1, 0/1]
+                   */
+            if (buffer[1] == '1' && )
+            
             break;
         case Lift: /* reach to this state when recieved pressure reached from all 4 pressure sensors
             keep checking the reached_up_right until we read that we are at 90
@@ -53,9 +60,10 @@ void Tick(){
             }
             else{
                 reached_up_right = false;
+                state = Lift;
             }
             if (reached_up_right){
-                state = Mo
+                state = MoveToDrop;
             }
         case MoveToDrop:
             break;
