@@ -19,6 +19,7 @@ std::string bufferString;
 // char buffer[5] = {0,0,0,0,0}
 unsigned char object_angle;
 int target_angle;
+double arm_angle = 90.0;
 
 void Tick(){
     if(Serial.available() > 0){
@@ -42,23 +43,45 @@ void Tick(){
             break;
         case Approach:
             break;
-        case Grip:
+        case Grip: /* reach to this state when we reach to the object
+                      keep checking if ALL 4 pressure sensors are fully pressed down, when done send to
+                      lift state aka make pressure_reached = true
+                      if not reach, continue incrementing 
+                      [3, 0/1, 0/1, 0/1, 0/1]
+                   */
+            int trueCounter = 0;
+            for (unsigned i = 1; i < 5; ++i){
+                if (buffer[i] == '1'){
+                    pressure_reached[i-1] = true;
+                    trueCounter++;
+                }
+            }
+            if (trueCounter == 4){
+                state = Lift;
+            }
+            
             break;
         case Lift: /* reach to this state when recieved pressure reached from all 4 pressure sensors
             keep checking the reached_up_right until we read that we are at 90
             when done, send the flag that we reached up right to MoveToDrop state
             buffer thats being read: [4, 0/1, X, X, X] (X = not used) 
           */
-            if (buffer[1] == '1'){
+            if (arm_angle == 90.0){
                 reached_up_right = true;
+                state = MoveToDrop
             }
             else{
                 reached_up_right = false;
-            }
-            if (reached_up_right){
-                state = Mo
+                state = Lift;
             }
         case MoveToDrop:
+            if (buffer[1] == '1'){
+                target_reached = true;
+                state = Release;
+            }
+            else{
+                target_reached = false;
+            }
             break;
         case Release:
             break;
