@@ -5,19 +5,19 @@ void setup(){
 }
 
 enum States { Idle, Seek, Approach, Grip, Lift, MoveToDrop, Release } state;
-
+//PWM Pin 3,5,6,9,10,11
 // flags
 unsigned char startSignal;
 unsigned char obj_located;
 unsigned char target_located;
 bool object_reached;
 bool pressure_reached[4];
-bool reached_up_right;
+bool reached_upright;
 char buffer[5] = {0,0,0,0,0};
 std::string bufferString;
 // flags: 0x00
 // char buffer[5] = {0,0,0,0,0}
-int object_angle;
+unsigned char object_angle;
 int target_angle;
 
 void Tick(){
@@ -31,6 +31,7 @@ void Tick(){
         case Idle:
             startSignal = buffer[0];    //get the first bit from buffer
             if(startSignal){                //if true, move to seek state
+		target_angle = toInt(Serial.readString());
                 state = Seek;
             }else state = Idle;
             startSignal = 0; //reset startSignal
