@@ -1,5 +1,3 @@
-#include <string>
-
 void setup(){
     Serial.begin(9600);
 }
@@ -14,41 +12,32 @@ bool object_reached;
 bool pressure_reached[4];
 bool reached_upright;
 char buffer[5] = {0,0,0,0,0};
-std::string bufferString;
+String bufferString;
 // flags: 0x00
 // char buffer[5] = {0,0,0,0,0}
 unsigned char object_angle;
 int target_angle;
 double arm_angle = 90.0;
-
-detected_object all_detected_objects[2];  
-
-struct detected_object{
-    int angle_to_rotate;
-    string obj_name;
-};
+bool target_reached;
 
 void Tick(){
     if(Serial.available() > 0){
-        bufferString = Serial.readString(); //reads from raspberry pi
-    }
+                bufferString = Serial.readString(); //reads from raspberry pi
+        }
     for(int i = 0; i < 5; i++){
         buffer[i] = bufferString[i];    //convert to char array
     }
     switch(state){  //state transitions
         case Idle:
-            if(buffer[0] == '1') //if we get a 1 from the serial, we start the 
-                state = Seek; //move to seek state
             startSignal = buffer[0];    //get the first bit from buffer
             if(startSignal){                //if true, move to seek state
-		target_angle = toInt(Serial.readString());
+		target_angle = Serial.readString().toInt();
                 state = Seek;
-            }
-            else state = Idle;
+            }else state = Idle;
             startSignal = 0; //reset startSignal
             break;
         case Seek:
-            obj_located = buffer[0];      
+            obj_located = buffer[0];
             // target_located = buffer[1]; // not finding target now
 
             if (obj_located) {
@@ -60,6 +49,7 @@ void Tick(){
             }
 
             obj_located = 0;
+
             break;
         case Approach:
             object_reached = buffer[0];
@@ -98,15 +88,14 @@ void Tick(){
             buffer thats being read: [4, 0/1, X, X, X] (X = not used) 
           */
             if (arm_angle == 90.0){
-                reached_up_right = true;
-                state = MoveToDrop
+                reached_upright = true;
+                state = MoveToDrop;
             }
             else{
-                reached_up_right = false;
+                reached_upright = false;
                 state = Lift;
             }
         case MoveToDrop:
-
             if (buffer[1] == '1'){
                 target_reached = true;
                 state = Release;
@@ -114,8 +103,8 @@ void Tick(){
             else{
                 target_reached = false;
             }
-      // MAKE SURE TO NOT CLEAR THE BUFFER HERE WE NEED TO KEEP THE 0/1 FOR THE LIFT STATE
             break;
+  // MAKE SURE TO NOT CLEAR THE BUFFER HERE WE NEED TO KEEP THE 0/1 FOR THE LIFT STATE
         case Release:
             if(buffer[0] == '1' && buffer[1] == 0 && buffer[2] == '0' && buffer[3] == '0' && buffer[4] == '0'){ //if we get a 1 from the serial, we start the 
                 state = Idle; //move to idle state
@@ -143,7 +132,6 @@ void Tick(){
         default:
             break;
     }
-    buffer = 0;
   }
 
 void loop() {
