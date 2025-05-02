@@ -20,24 +20,44 @@ std::string bufferString;
 int object_angle;
 int target_angle;
 
+detected_object all_detected_objects[2];  
+
+struct detected_object{
+    int angle_to_rotate;
+    string obj_name;
+};
+
 void Tick(){
     if(Serial.available() > 0){
-                bufferString = Serial.readString(); //reads from raspberry pi
-        }
+        bufferString = Serial.readString(); //reads from raspberry pi
+    }
     for(int i = 0; i < 5; i++){
         buffer[i] = bufferString[i];    //convert to char array
     }
     switch(state){  //state transitions
         case Idle:
+            if(buffer[0] == '1') //if we get a 1 from the serial, we start the 
+                state = Seek; //move to seek state
             startSignal = buffer[0];    //get the first bit from buffer
             if(startSignal){                //if true, move to seek state
                 state = Seek;
-            }else state = Idle;
+            }
+            else state = Idle;
             startSignal = 0; //reset startSignal
             break;
         case Seek:
             obj_located = buffer[0];
-            target_located = buffer[1];            
+            target_located = buffer[1];    
+            while(!obj_located || !target_located){ //while we have not found the object or target
+                if(obj_located){
+                    detected_object obj = {/* whatever the object name is from serial */, buffer[2]}; //get the object name and angle from buffer
+                    all_detected_objects[0] = obj; //store the object in the array
+                } 
+                if(targetfound){
+                    detected_object target = {"target", buffer[3]}; //get the target name and angle from buffer
+                    all_detected_objects[1] = target; //store the target in the array
+                }
+            }        
             break;
         case Approach:
             break;
@@ -58,8 +78,13 @@ void Tick(){
                 state = Mo
             }
         case MoveToDrop:
+            // MAKE SURE TO NOT CLEAR THE BUFFER HERE WE NEED TO KEEP THE 0/1 FOR THE LIFT STATE
             break;
         case Release:
+            if(buffer[0] == '1' && buffer[1] == 0 && buffer[2] == '0' && buffer[3] == '0' && buffer[4] == '0'){ //if we get a 1 from the serial, we start the 
+                state = Idle; //move to idle state
+            }
+            else state = Release;
             break;
         default:
             break;
