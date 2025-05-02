@@ -74,6 +74,13 @@ void Tick(){
                 state = Lift;
             }
         case MoveToDrop:
+            if (buffer[1] == '1'){
+                target_reached = true;
+                state = Release;
+            }
+            else{
+                target_reached = false;
+            }
             break;
         case Release:
             break;
