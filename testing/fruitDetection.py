@@ -7,7 +7,8 @@ model = YOLO("yolov8n.pt")
 # Define your fruit classes (adjust names as per model.names)
 fruit_classes = {"apple", "banana", "orange"}
 
-cap = cv2.VideoCapture(0)
+# change to the ip address
+cap = cv2.VideoCapture("http://10.43.0.59:7123/stream.mjpg")
 
 while True:
     ret, frame = cap.read()
