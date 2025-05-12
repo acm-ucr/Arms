@@ -1,5 +1,21 @@
+#include <Servo.h>
+
+Servo finger1;
+Servo finger2;
+Servo finger3;
+Servo wrist;
+
+
 void setup(){
     Serial.begin(9600);
+    pinMode(3, INPUT);
+    pinMode(5, INPUT);
+    pinMode(6, INPUT);
+    pinMode(9, INPUT);
+    finger1.attach(3);
+    finger2.attach(5);
+    finger3.attach(6);
+    wrist.attach(9);
 }
 
 enum States { Idle, Seek, Approach, Grip, Lift, MoveToDrop, Release } state;
@@ -19,6 +35,9 @@ unsigned char object_angle;
 int target_angle;
 double arm_angle = 90.0;
 bool target_reached;
+int curr_finger1_angle;
+int curr_finger2_angle;
+int curr_finger3_angle;
 
 void Tick(){
     if(Serial.available() > 0){
@@ -122,6 +141,13 @@ void Tick(){
         case Approach:
             break;
         case Grip:
+            curr_finger1_angle = finger1.read();
+            curr_finger2_angle = finger2.read();
+            curr_finger3_angle = finger3.read();
+            // might have to change direction later (+/-)
+            finger1.write(curr_finger1_angle + 1);
+            finger.write(curr_finger_angle + 1);
+            finger.write(curr_finger3_angle + 1);
             break;
         case Lift:
             break;
