@@ -40,7 +40,7 @@ void Tick(){
             // target_located = buffer[1]; // not finding target now
 
             if (obj_located) {
-                object_angle = servo.read() // replace with actual servo name
+                object_angle = servo.read(); // replace with actual servo name
                 state = Approach;
             }
             else {
@@ -52,7 +52,7 @@ void Tick(){
             break;
         case Approach:
             object_reached = buffer[0];
-            
+
             if (object_reached) {
                 state = Grip;    
             }
