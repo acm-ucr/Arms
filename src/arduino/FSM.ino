@@ -1,3 +1,6 @@
+#include <Stepper.h>
+
+
 void setup(){
     Serial.begin(9600);
 }
@@ -119,7 +122,7 @@ void Tick(){
             break;
         case Seek:
             break;
-        case Approach:
+        case Approach:     
             break;
         case Grip:
             break;
