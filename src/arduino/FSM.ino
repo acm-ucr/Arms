@@ -45,6 +45,9 @@ unsigned char object_angle;
 int target_angle;
 double arm_angle = 90.0;
 bool target_reached;
+int curr_finger1_angle;
+int curr_finger2_angle;
+int curr_finger3_angle;
 
 void Tick(){
     if(Serial.available() > 0){
@@ -67,7 +70,7 @@ void Tick(){
             // target_located = buffer[1]; // not finding target now
 
             if (obj_located) {
-                object_angle = servo.read() // replace with actual servo name
+                object_angle = servo.read(); // replace with actual servo name
                 state = Approach;
             }
             else {
@@ -79,7 +82,7 @@ void Tick(){
             break;
         case Approach:
             object_reached = buffer[0];
-            
+
             if (object_reached) {
                 state = Grip;    
             }
@@ -144,10 +147,19 @@ void Tick(){
         case Idle:
             break;
         case Seek:
+            
             break;
         case Approach:
+
             break;
         case Grip:
+            curr_finger1_angle = finger1.read();
+            curr_finger2_angle = finger2.read();
+            curr_finger3_angle = finger3.read();
+            // might have to change direction later (+/-)
+            finger1.write(curr_finger1_angle + 1);
+            finger.write(curr_finger_angle + 1);
+            finger.write(curr_finger3_angle + 1);
             break;
         case Lift:
             break;
