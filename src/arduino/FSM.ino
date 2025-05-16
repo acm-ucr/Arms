@@ -1,9 +1,35 @@
+#include <string>
+#include <Servo.h>
+
+Servo finger1;
+Servo finger2;
+Servo finger3;
+Servo wrist;
+Servo vex1;
+Servo vex2;
+
 void setup(){
     Serial.begin(9600);
+    pinMode(3, INPUT);
+    pinMode(5, INPUT);
+    pinMode(6, INPUT);
+    pinMode(9, INPUT);
+    pinMode(10, INPUT);
+    pinMode(11, INPUT);
+    finger1.attach(3);
+    finger2.attach(5);
+    finger3.attach(6);
+    wrist.attach(9);
+    vex1.attach(10);
+    vex2.attach(11);
 }
 
 enum States { Idle, Seek, Approach, Grip, Lift, MoveToDrop, Release } state;
 //PWM Pin 3,5,6,9,10,11
+//For the vex motor, the arduino conects to the driver
+//Pin D11 goes to PWMA and Pin D10 goes to PWMB
+//D13 and D12 go to 
+//STBY needs to be connected to high at all times.
 // flags
 unsigned char startSignal;
 unsigned char obj_located;
@@ -14,7 +40,7 @@ bool reached_upright;
 char buffer[5] = {0,0,0,0,0};
 String bufferString;
 // flags: 0x00
-// char buffer[5] = {0,0,0,0,0}
+
 unsigned char object_angle;
 int target_angle;
 double arm_angle = 90.0;
