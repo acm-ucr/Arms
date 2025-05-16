@@ -137,8 +137,10 @@ void Tick(){
         case Idle:
             break;
         case Seek:
+            
             break;
         case Approach:
+
             break;
         case Grip:
             curr_finger1_angle = finger1.read();
