@@ -5,8 +5,8 @@ Servo finger1;
 Servo finger2;
 Servo finger3;
 Servo wrist;
-Servo vex1;
-Servo vex2;
+Servo vexR;
+Servo vexP;
 
 void setup(){
     Serial.begin(9600);
@@ -20,8 +20,12 @@ void setup(){
     finger2.attach(5);
     finger3.attach(6);
     wrist.attach(9);
-    vex1.attach(10);
-    vex2.attach(11);
+
+    vexR.attach(10);
+    pinMode(12, OUTPUT);
+    pinMode(13, OUTPUT);
+    
+    vexP.attach(11);
 }
 
 enum States { Idle, Seek, Approach, Grip, Lift, MoveToDrop, Release } state;
