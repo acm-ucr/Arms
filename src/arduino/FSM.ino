@@ -1,12 +1,11 @@
-#include <string>
 #include <Servo.h>
 
 Servo finger1;
 Servo finger2;
 Servo finger3;
 Servo wrist;
-Servo vex1;
-Servo vex2;
+Servo vexR;
+Servo vexP;
 
 void setup(){
     Serial.begin(9600);
@@ -20,8 +19,8 @@ void setup(){
     finger2.attach(5);
     finger3.attach(6);
     wrist.attach(9);
-    vex1.attach(10);
-    vex2.attach(11);
+    vexR.attach(10);
+    vexP.attach(11);
 }
 
 enum States { Idle, Seek, Approach, Grip, Lift, MoveToDrop, Release } state;
@@ -51,7 +50,7 @@ int curr_finger3_angle;
 
 void Tick(){
     if(Serial.available() > 0){
-                bufferString = Serial.readString(); //reads from raspberry pi
+          bufferString = Serial.readString(); //reads from raspberry pi
         }
     for(int i = 0; i < 5; i++){
         buffer[i] = bufferString[i];    //convert to char array
@@ -60,7 +59,7 @@ void Tick(){
         case Idle:
             startSignal = buffer[0];    //get the first bit from buffer
             if(startSignal){                //if true, move to seek state
-		target_angle = Serial.readString().toInt();
+		            target_angle = Serial.readString().toInt();
                 state = Seek;
             }else state = Idle;
             startSignal = 0; //reset startSignal
@@ -68,30 +67,17 @@ void Tick(){
         case Seek:
             obj_located = buffer[0];
             // target_located = buffer[1]; // not finding target now
-
             if (obj_located) {
-                object_angle = servo.read(); // replace with actual servo name
-                state = Approach;
-            }
-            else {
-                state = Seek;
-            }
-
+              state = Approach;
+            } else state = Seek;
             obj_located = 0;
-
             break;
         case Approach:
             object_reached = buffer[0];
-
             if (object_reached) {
                 state = Grip;    
-            }
-            else {
-                state = Approach;
-            }
-
+            } else state = Approach;
             object_reached = 0;
-
             break;
         case Grip: /* reach to this state when we reach to the object
                       keep checking if ALL 4 pressure sensors are fully pressed down, when done send to
@@ -100,9 +86,9 @@ void Tick(){
                       [3, 0/1, 0/1, 0/1, 0/1]
                    */
             int trueCounter = 0;
-            for (unsigned i = 1; i < 5; ++i){
+            for (unsigned i = 0; i < 4; ++i){
                 if (buffer[i] == '1'){
-                    pressure_reached[i-1] = true;
+                    pressure_reached[i] = true;
                     trueCounter++;
                 }
             }
@@ -150,7 +136,40 @@ void Tick(){
             
             break;
         case Approach:
+            int count = 0;
+            if (buffer[1] == '1'){
 
+            }
+            else{
+                count++;
+            }
+
+            if (buffer[2] == '1'){
+
+            } else{
+                count++;
+            }
+
+            if (buffer[3] == '1'){
+                wrist.write(85);
+                delay(50);
+                wrist.write(90);
+            } else{
+                count++;
+            }
+
+            if (buffer[4] == '1'){
+                wrist.write(95);
+                delay(50);
+                wrist.write(90);
+            } else{
+                count++;
+            }
+            
+            if (count == 4){ // the object is centered in the camera
+
+            } 
+            
             break;
         case Grip:
             curr_finger1_angle = finger1.read();
@@ -158,8 +177,8 @@ void Tick(){
             curr_finger3_angle = finger3.read();
             // might have to change direction later (+/-)
             finger1.write(curr_finger1_angle + 1);
-            finger.write(curr_finger_angle + 1);
-            finger.write(curr_finger3_angle + 1);
+            finger2.write(curr_finger2_angle + 1);
+            finger3.write(curr_finger3_angle + 1);
             break;
         case Lift:
             break;
