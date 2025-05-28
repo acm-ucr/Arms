@@ -1,8 +1,8 @@
-#define AIN1 7
-#define AIN2 8
-#define PWM 3
-#define BIN1 4
-#define BIN2 5
+#define AIN1 11
+#define AIN2 12
+#define PWM 10
+#define BIN1 7
+#define BIN2 8
 
 
 void setup() {
@@ -24,5 +24,19 @@ void setup() {
 
 void loop() {
   // Motor spins constantly
+
+  digitalWrite(AIN1,HIGH);
+  digitalWrite(AIN2, LOW);
+  digitalWrite(BIN1, LOW);
+  digitalWrite(BIN2, HIGH);
+
+  delay(1000);
+
+  digitalWrite(AIN1,LOW);
+  digitalWrite(AIN2, LOW);
+  digitalWrite(BIN1, HIGH);
+  digitalWrite(BIN2, HIGH);
+
+  delay(1000);
 
 }
