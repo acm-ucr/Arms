@@ -7,20 +7,43 @@ Servo wrist;
 Servo vexR;
 Servo vexP;
 
-void setup(){
+// vex motor definitions i think
+#define AIN1 11 // left bit for the pitch motor 10
+#define AIN2 12 // right bit for the pitch motor 01
+#define PWM 10
+#define BIN1 7 // left bit for the rotation motor 10
+#define BIN2 8 // right bit for the rotation motor 01
+
+// 00 for slow-stop, 01 for clockwise, 10 for counter-clockwise, 11 for hardstop
+
+void setup(){ // commented parts are there due to uncertainty (its scary)
     Serial.begin(9600);
     pinMode(3, INPUT);
-    pinMode(5, INPUT);
+    pinMode(5, INPUT); 
+
+    //vex pinmodes
+    pinMode(AIN1, INPUT);
+    pinMode(AIN2, INPUT);
+    pinMode(BIN1, INPUT);
+    pinMode(BIN2, INPUT);
+
     pinMode(6, INPUT);
     pinMode(9, INPUT);
-    pinMode(10, INPUT);
-    pinMode(11, INPUT);
+    pinMode(10, INPUT); // same for both a and b (i think)
+    //pinMode(11, INPUT);
     finger1.attach(3);
     finger2.attach(5);
     finger3.attach(6);
     wrist.attach(9);
     vexR.attach(10);
-    vexP.attach(11);
+    //vexP.attach(11);
+    vexP.attach(10);
+
+    analogWrite(PWM, 50); //making sure the speed is always nothing when starting
+    digitalWrite(AIN1, LOW);
+    digitalWrite(AIN2, LOW);
+    digitalWrite(BIN1, LOW);
+    digitalWrite(BIN2, LOW); // same idea for the bits
 }
 
 enum States { Idle, Seek, Approach, Grip, Lift, MoveToDrop, Release } state;
@@ -38,6 +61,8 @@ bool pressure_reached[4];
 bool reached_upright;
 char buffer[5] = {0,0,0,0,0};
 String bufferString;
+int vexPTickCount = 0; // for the release state
+int vexRTickCount = 0; // ^^^ clockwise increases the count while counter clockwise decreases the count
 // flags: 0x00
 
 unsigned char object_angle;
@@ -83,7 +108,7 @@ void Tick(){
                       keep checking if ALL 4 pressure sensors are fully pressed down, when done send to
                       lift state aka make pressure_reached = true
                       if not reach, continue incrementing 
-                      [3, 0/1, 0/1, 0/1, 0/1]
+                      [0/1, 0/1, 0/1, 0/1, X]
                    */
             int trueCounter = 0;
             for (unsigned i = 0; i < 4; ++i){
@@ -100,20 +125,23 @@ void Tick(){
         case Lift: /* reach to this state when recieved pressure reached from all 4 pressure sensors
             keep checking the reached_up_right until we read that we are at 90
             when done, send the flag that we reached up right to MoveToDrop state
-            buffer thats being read: [4, 0/1, X, X, X] (X = not used) 
+            buffer thats being read: [0/1, X, X, X, X] (X = not used) 
           */
             if (arm_angle == 90.0){
                 reached_upright = true;
                 state = MoveToDrop;
+                digitalWrite(AIN1, LOW);
             }
             else{
                 reached_upright = false;
                 state = Lift;
             }
-        case MoveToDrop:
+        case MoveToDrop: // should discuss if we are told if its cw or ccw so it can move faster
             if (buffer[1] == '1'){
                 target_reached = true;
                 state = Release;
+                digitalWrite(AIN1, LOW);
+                digitalWrite(AIN2, LOW);
             }
             else{
                 target_reached = false;
@@ -130,46 +158,57 @@ void Tick(){
             break;
     }
     switch(state){  //state actions
-        case Idle:
+        case Idle: // should do nothing, discuss this further if needed
             break;
         case Seek:
             
             break;
         case Approach:
             int count = 0;
-            if (buffer[1] == '1'){
-
+            if (buffer[1] == '1'){ // move the wrist left (with vex)
+                digitalWrite(BIN1, LOW); // counter-clockwise (edit if needed)
+                digitalWrite(BIN2, HIGH);
+                delay(25);
+                digitalWrite(BIN2, LOW);
+                vexPTickCount++;
             }
             else{
                 count++;
             }
 
-            if (buffer[2] == '1'){
-
+            if (buffer[2] == '1'){ // move the wrist right (with vex)
+                digitalWrite(BIN1, HIGH); // clockwise (edit if needed)
+                digitalWrite(BIN2, LOW);
+                delay(25);
+                digitalWrite(BIN1, LOW);
+                vexPTickCount++;
             } else{
                 count++;
             }
 
-            if (buffer[3] == '1'){
+            if (buffer[3] == '1'){ // move the wrist up (with servo)
                 wrist.write(85);
-                delay(50);
+                delay(25);
                 wrist.write(90);
             } else{
                 count++;
             }
 
-            if (buffer[4] == '1'){
+            if (buffer[4] == '1'){ // move the wrist down (with servo)
                 wrist.write(95);
-                delay(50);
+                delay(25);
                 wrist.write(90);
             } else{
                 count++;
             }
             
             if (count == 4){ // the object is centered in the camera
-
-            } 
-            
+                digitalWrite(AIN1, LOW); // counter-clockwise, HEAVILY CHECK THIS
+                digitalWrite(AIN2, HIGH); 
+                delay(25);
+                digitalWrite(AIN2, LOW);
+                vexRTickCount--;
+            }
             break;
         case Grip:
             curr_finger1_angle = finger1.read();
@@ -181,10 +220,40 @@ void Tick(){
             finger3.write(curr_finger3_angle + 1);
             break;
         case Lift:
+            digitalWrite(AIN1, HIGH); // clockwise, keep opposite of approach
+            digitalWrite(AIN1, LOW);
+            vexRTickCount++;
             break;
         case MoveToDrop:
+            //potential code based off of if we are told the direction
+            if (direction == 1){ // clockwise
+                digitalWrite(AIN1, HIGH);
+                digitalWrite(AIN2, LOW);
+                vexRTickCount++;
+            }
+            else{
+                digitalWrite(AIN1, LOW); // counter-clockwise
+                digitalWrite(AIN2, HIGH);
+                vexRTickCount--;
+            }
+
+            // code that will 100% work with what logic we already have
+            digitalWrite(AIN1, HIGH); // clockwise
+            digitalWrite(AIN2, LOW);
+            vexRTickCount++;
             break;
         case Release:
+            if (vexPTickCount != 0){
+                if (vexPTickCount){
+
+                }
+                else{
+
+                }
+                
+            }
+
+            if (vexRtickCount)
             break;
         default:
             break;
