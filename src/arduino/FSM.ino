@@ -220,7 +220,7 @@ void Tick(){
             finger3.write(curr_finger3_angle + 1);
             break;
         case Lift:
-            digitalWrite(AIN1, HIGH); // clockwise, keep opposite of approach
+            digitalWrite(AIN1, HIGH); // clockwise, keep opposite of approach (205-210 as i write this)
             digitalWrite(AIN1, LOW);
             vexRTickCount++;
             break;
@@ -229,31 +229,31 @@ void Tick(){
             if (direction == 1){ // clockwise
                 digitalWrite(AIN1, HIGH);
                 digitalWrite(AIN2, LOW);
+                delay(25);
                 vexRTickCount++;
             }
             else{
                 digitalWrite(AIN1, LOW); // counter-clockwise
                 digitalWrite(AIN2, HIGH);
+                delay(25);
                 vexRTickCount--;
             }
-
             // code that will 100% work with what logic we already have
             digitalWrite(AIN1, HIGH); // clockwise
             digitalWrite(AIN2, LOW);
+            delay(25);
             vexRTickCount++;
             break;
-        case Release:
-            if (vexPTickCount != 0){
-                if (vexPTickCount){
-
+        case Release: // first release the fingers back to a certain degree (probably starting), then change the rotation and pitch of the original position dictated by the count variables
+                      // then fix the wrist orientation
+                      // original idea is that it iterates the action multiple times, probably adding more 
+                if (fixFingers()){
+                    if (fixVexMotors()){
+                        if (fixWrist()){
+                            // done :D
+                        }
+                    }
                 }
-                else{
-
-                }
-                
-            }
-
-            if (vexRtickCount)
             break;
         default:
             break;
@@ -263,4 +263,54 @@ void Tick(){
 void loop() {
     state = Idle;
     Tick();
+}
+
+bool fixFingers(){
+    return false;
+}
+
+bool fixVexMotors(){
+    if (vexPTickCount != 0){
+        if (vexPTickCount > 0){ // going counter-clockwise to go to original position
+            digitalWrite(AIN1, LOW);
+            digitalWrite(AIN2, HIGH);
+            delay(25);
+            vexPTickCount--;
+        }
+        else{ // going clockwise to go to original position
+            digitalWrite(AIN1, HIGH);
+            digitalWrite(AIN2, LOW);
+            delay(25);
+            vexPTickCount++;
+        }            
+    }
+
+    digitalWrite(AIN1, LOW);
+    digitalWrite(AIN2, LOW);
+
+    if (vexRtickount != 0){
+        if (vexRTickCount > 0){ // going counter-clockwise to go to original position
+            digitalWrite(BIN1, LOW);
+            digitalWrite(BIN2, HIGH);
+            delay(25);
+            vexRTickCount--;
+        }
+        else{ // going clockwise to go to original position
+            digitalWrite(BIN1, HIGH);
+            digitalWrite(BIN2, LOW);
+            delay(25);
+            vexRTickCount++;
+        }
+    }
+
+    digitalWrite(BIN1, LOW);
+    digitalWrite(BIN2, LOW);
+    if  (vexRTickCount == 0 && vexRTickCount == 0){
+        return true;
+    }
+    return false;
+}
+
+bool fixWrist(){
+    return false;
 }
