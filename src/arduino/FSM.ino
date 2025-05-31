@@ -39,11 +39,16 @@ void setup(){ // commented parts are there due to uncertainty (its scary)
     //vexP.attach(11);
     vexP.attach(10);
 
+    pinMode(A4, INPUT); // Palm pressure sensor
+
     analogWrite(PWM, 50); //making sure the speed is always nothing when starting
     digitalWrite(AIN1, LOW);
     digitalWrite(AIN2, LOW);
     digitalWrite(BIN1, LOW);
     digitalWrite(BIN2, LOW); // same idea for the bits
+    state = Idle;
+    int averagePalmSensor = 0;
+    int tickCounter = 0;
 }
 
 enum States { Idle, Seek, Approach, Grip, Lift, MoveToDrop, Release } state;
@@ -53,7 +58,7 @@ enum States { Idle, Seek, Approach, Grip, Lift, MoveToDrop, Release } state;
 //D13 and D12 go to 
 //STBY needs to be connected to high at all times.
 // flags
-unsigned char startSignal;
+unsigned char startSignal; // used
 unsigned char obj_located;
 unsigned char target_located;
 bool object_reached;
@@ -84,7 +89,6 @@ void Tick(){
         case Idle:
             startSignal = buffer[0];    //get the first bit from buffer
             if(startSignal){                //if true, move to seek state
-		            target_angle = Serial.readString().toInt();
                 state = Seek;
             }else state = Idle;
             startSignal = 0; //reset startSignal
@@ -94,6 +98,7 @@ void Tick(){
             // target_located = buffer[1]; // not finding target now
             if (obj_located) {
               state = Approach;
+              digitalWrite(BIN1, LOW);
             } else state = Seek;
             obj_located = 0;
             break;
@@ -161,11 +166,14 @@ void Tick(){
         case Idle: // should do nothing, discuss this further if needed
             break;
         case Seek:
-            
+            digitalWrite(BIN1, HIGH); // rotating as told until we're done and stuff
+            digitalWrite(BIN2, LOW);
+            delay(25);
+            vexRTickCount++;
             break;
         case Approach:
             int count = 0;
-            if (buffer[1] == '1'){ // move the wrist left (with vex)
+            if (buffer[1] == '1'){ // move the wrist left (with vex) -- rotation motor
                 digitalWrite(BIN1, LOW); // counter-clockwise (edit if needed)
                 digitalWrite(BIN2, HIGH);
                 delay(25);
@@ -176,7 +184,7 @@ void Tick(){
                 count++;
             }
 
-            if (buffer[2] == '1'){ // move the wrist right (with vex)
+            if (buffer[2] == '1'){ // move the wrist right (with vex) -- rotation motor
                 digitalWrite(BIN1, HIGH); // clockwise (edit if needed)
                 digitalWrite(BIN2, LOW);
                 delay(25);
@@ -202,13 +210,23 @@ void Tick(){
                 count++;
             }
             
-            if (count == 4){ // the object is centered in the camera
+            if (count == 4){ // the object is centered in the camera  -- pitch motor
                 digitalWrite(AIN1, LOW); // counter-clockwise, HEAVILY CHECK THIS
                 digitalWrite(AIN2, HIGH); 
                 delay(25);
                 digitalWrite(AIN2, LOW);
                 vexRTickCount--;
             }
+
+            if (tickCounter != 5){
+                averagePalmSensor += analogRead();
+                tickCounter++;
+            }
+            else {
+                averagePalmSensor = averagePalmSensor / tickCounter;
+                Serial.println(averagePalmSensor);
+            }
+
             break;
         case Grip:
             curr_finger1_angle = finger1.read();
@@ -220,27 +238,27 @@ void Tick(){
             finger3.write(curr_finger3_angle + 1);
             break;
         case Lift:
-            digitalWrite(AIN1, HIGH); // clockwise, keep opposite of approach (205-210 as i write this)
+            digitalWrite(AIN1, HIGH); // clockwise, keep opposite of approach (205-210 as i write this) -- pitch motor
             digitalWrite(AIN1, LOW);
             vexRTickCount++;
             break;
         case MoveToDrop:
             //potential code based off of if we are told the direction
-            if (direction == 1){ // clockwise
-                digitalWrite(AIN1, HIGH);
-                digitalWrite(AIN2, LOW);
+            if (direction == 1){ // clockwise -- rotation motor
+                digitalWrite(BIN1, HIGH);
+                digitalWrite(BIN2, LOW);
                 delay(25);
                 vexRTickCount++;
             }
             else{
-                digitalWrite(AIN1, LOW); // counter-clockwise
-                digitalWrite(AIN2, HIGH);
+                digitalWrite(BIN1, LOW); // counter-clockwise -- rotation motor
+                digitalWrite(BIN2, HIGH);
                 delay(25);
                 vexRTickCount--;
             }
             // code that will 100% work with what logic we already have
-            digitalWrite(AIN1, HIGH); // clockwise
-            digitalWrite(AIN2, LOW);
+            digitalWrite(BIN1, HIGH); // clockwise -- rotation motor
+            digitalWrite(BIN2, LOW);
             delay(25);
             vexRTickCount++;
             break;
@@ -250,7 +268,7 @@ void Tick(){
                 if (fixFingers()){
                     if (fixVexMotors()){
                         if (fixWrist()){
-                            // done :D
+
                         }
                     }
                 }
@@ -261,7 +279,6 @@ void Tick(){
   }
 
 void loop() {
-    state = Idle;
     Tick();
 }
 
@@ -305,6 +322,7 @@ bool fixVexMotors(){
 
     digitalWrite(BIN1, LOW);
     digitalWrite(BIN2, LOW);
+
     if  (vexRTickCount == 0 && vexRTickCount == 0){
         return true;
     }
