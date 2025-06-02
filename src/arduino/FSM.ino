@@ -1,4 +1,5 @@
 #include <Servo.h>
+#include <string>
 
 Servo finger1;
 Servo finger2;
@@ -6,11 +7,14 @@ Servo finger3;
 Servo wrist;
 Servo vexR;
 Servo vexP;
-
+int fingerPressureOne;
+int fingerPressureTwo;
+int fingerPressureThree;
+string pressureGrab;
 // vex motor definitions i think
 #define AIN1 11 // left bit for the pitch motor 10
 #define AIN2 12 // right bit for the pitch motor 01
-#define PWM 10
+#define PWM 10  //same pwm for both motors
 #define BIN1 7 // left bit for the rotation motor 10
 #define BIN2 8 // right bit for the rotation motor 01
 
@@ -18,8 +22,8 @@ Servo vexP;
 
 void setup(){ // commented parts are there due to uncertainty (its scary)
     Serial.begin(9600);
-    pinMode(3, INPUT);
-    pinMode(5, INPUT); 
+    pinMode(3, INPUT);  //finger 1
+    pinMode(5, INPUT);  //finger 2
 
     //vex pinmodes
     pinMode(AIN1, INPUT);
@@ -27,9 +31,14 @@ void setup(){ // commented parts are there due to uncertainty (its scary)
     pinMode(BIN1, INPUT);
     pinMode(BIN2, INPUT);
 
-    pinMode(6, INPUT);
-    pinMode(9, INPUT);
+    pinMode(6, INPUT);  //finger 3
+    pinMode(9, INPUT);  //wrist
     pinMode(10, INPUT); // same for both a and b (i think)
+
+    pinMode(A0, INPUT);
+    pinMode(A1, INPUT);
+    pinMode(A2, INPUT);
+
     //pinMode(11, INPUT);
     finger1.attach(3);
     finger2.attach(5);
@@ -53,25 +62,23 @@ enum States { Idle, Seek, Approach, Grip, Lift, MoveToDrop, Release } state;
 //D13 and D12 go to 
 //STBY needs to be connected to high at all times.
 // flags
-unsigned char startSignal;
-unsigned char obj_located;
-unsigned char target_located;
+unsigned char startSignal;  //tells us to enter the starting state of the program
+unsigned char obj_located;  //if object detected by camera
 bool object_reached;
-bool pressure_reached[4];
-bool reached_upright;
-char buffer[5] = {0,0,0,0,0};
-String bufferString;
+bool pressure_reached[4];   //if 111 then all 3 fingers reached correct pressure
+bool reached_upright;   //arm is back in original position
+char buffer[5] = {0,0,0,0,0};  
+string bufferString;
 int vexPTickCount = 0; // for the release state
 int vexRTickCount = 0; // ^^^ clockwise increases the count while counter clockwise decreases the count
 // flags: 0x00
 
 unsigned char object_angle;
-int target_angle;
 double arm_angle = 90.0;
 bool target_reached;
-int curr_finger1_angle;
-int curr_finger2_angle;
-int curr_finger3_angle;
+int curr_finger1_angle = 0; // 
+int curr_finger2_angle = 0; //
+int curr_finger3_angle = 0; //
 
 void Tick(){
     if(Serial.available() > 0){
@@ -111,13 +118,13 @@ void Tick(){
                       [0/1, 0/1, 0/1, 0/1, X]
                    */
             int trueCounter = 0;
-            for (unsigned i = 0; i < 4; ++i){
+            for (unsigned i = 0; i < 3; ++i){   //we only need 3 pressure sensors for this state because dont need palm
                 if (buffer[i] == '1'){
                     pressure_reached[i] = true;
                     trueCounter++;
                 }
             }
-            if (trueCounter == 4){
+            if (trueCounter == 3){
                 state = Lift;
             }
             
@@ -211,13 +218,23 @@ void Tick(){
             }
             break;
         case Grip:
-            curr_finger1_angle = finger1.read();
-            curr_finger2_angle = finger2.read();
-            curr_finger3_angle = finger3.read();
+        //read pressure for all 3 fingers
+            fingerPressureOne = analogRead(A0); //get pressure for first finger
+            fingerPressureTwo = analogRead(A1); //pressure for second
+            fingerPressureThree = analogRead(A2);   //pressure for third
+            
+            //combine 3 pressure values into 1 string with a space in between and newline at end for cs team to read in
+            pressureGrab = std::to_string(fingerOne) + " " + std::to_string(fingerTwo) + " " + std::to_string(fingerThree) + "\n";
+            Serial.write(pressureGrab); //send value to cs team.
+
+            //curr_finger1_angle = finger1.read();
+            //curr_finger2_angle = finger2.read();
+            //curr_finger3_angle = finger3.read();
+
             // might have to change direction later (+/-)
-            finger1.write(curr_finger1_angle + 1);
-            finger2.write(curr_finger2_angle + 1);
-            finger3.write(curr_finger3_angle + 1);
+            if(buffer[0] == '0') finger1.write(curr_finger1_angle + 1);
+            if(buffer[0] == '1') finger2.write(curr_finger2_angle + 1);
+            if(buffer[0] == '2') finger3.write(curr_finger3_angle + 1);
             break;
         case Lift:
             digitalWrite(AIN1, HIGH); // clockwise, keep opposite of approach (205-210 as i write this)
@@ -226,6 +243,7 @@ void Tick(){
             break;
         case MoveToDrop:
             //potential code based off of if we are told the direction
+
             if (direction == 1){ // clockwise
                 digitalWrite(AIN1, HIGH);
                 digitalWrite(AIN2, LOW);
