@@ -72,10 +72,11 @@ bool target_reached;
 int curr_finger1_angle;
 int curr_finger2_angle;
 int curr_finger3_angle;
+int curr_wrist_angle;
 
 void Tick(){
     if(Serial.available() > 0){
-          bufferString = Serial.readString(); //reads from raspberry pi
+          bufferString = Serial.readStringUntil('\n'); //reads from raspberry pi
         }
     for(int i = 0; i < 5; i++){
         buffer[i] = bufferString[i];    //convert to char array
@@ -260,12 +261,33 @@ void Tick(){
     }
   }
 
+
 void loop() {
     state = Idle;
+
     Tick();
 }
 
 bool fixFingers(){
+    curr_finger1_angle = finger1.read();
+    curr_finger2_angle = finger2.read();
+    curr_finger3_angle = finger3.read();
+    // might have to change direction later (+/-)
+    // update angle condition value based later based on orientation in arm
+    if (curr_finger1_angle != 90) {
+        finger1.write(curr_finger1_angle + 1);
+    }
+    if (curr_finger2_angle != 90) {
+        finger2.write(curr_finger2_angle + 1);
+    }
+    if (curr_finger3_angle != 90) {
+        finger3.write(curr_finger3_angle + 1);
+    }
+
+    if (curr_finger1_angle == 90 && curr_finger2_angle == 90 && curr_finger3_angle == 90) {
+        return true;
+    }
+    
     return false;
 }
 
@@ -312,5 +334,14 @@ bool fixVexMotors(){
 }
 
 bool fixWrist(){
+    curr_wrist_angle = wrist.read();
+    // might have to change direction later (+/-)
+    // update angle condition value based later based on orientation in arm
+    if (curr_wrist_angle != 90) {
+        wrist.write(curr_wrist_angle + 1);
+    }
+    if (curr_wrist_angle == 90) {
+        return true;
+    }
     return false;
 }
