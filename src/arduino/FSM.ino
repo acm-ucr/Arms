@@ -107,6 +107,7 @@ void Tick(){
         case Idle:
             startSignal = buffer[0];    //get the first bit from buffer
             if(startSignal){                //if true, move to seek state
+
 		            //target_angle = Serial.readString().toInt();
                 state = Seek;
             }else state = Idle;
@@ -184,13 +185,21 @@ void Tick(){
         case Idle: // should do nothing, discuss this further if needed
             break;
         case Seek:
-            if (vexRTickCount > 0){ // the object is centered in the camera
-              digitalWrite(AIN1, LOW); // counter-clockwise, HEAVILY CHECK THIS
-              digitalWrite(AIN2, HIGH); 
-              delay(25);
-              digitalWrite(AIN2, LOW);
-              vexRTickCount--;
-            else if (vexRTickCount > )
+            if(direction){
+                digitalWrite(BIN1, HIGH); // clockwise (edit if needed)
+                digitalWrite(BIN2, LOW);
+                delay(25);
+                digitalWrite(BIN1, LOW);
+                vexRTickCount--;
+                if(vexRTickCount == 0) direction = 0;
+            }else if(!direction){
+                digitalWrite(BIN1, LOW); // counter-clockwise (edit if needed)
+                digitalWrite(BIN2, HIGH);
+                delay(25);
+                digitalWrite(BIN2, LOW);
+                vexRTickCount++;
+                if(vexRTickCount == 10) direction = 1;
+            }
             break;
         case Approach:
             int count = 0;
