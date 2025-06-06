@@ -184,7 +184,13 @@ void Tick(){
         case Idle: // should do nothing, discuss this further if needed
             break;
         case Seek:
-            
+            if (vexRTickCount > 0){ // the object is centered in the camera
+              digitalWrite(AIN1, LOW); // counter-clockwise, HEAVILY CHECK THIS
+              digitalWrite(AIN2, HIGH); 
+              delay(25);
+              digitalWrite(AIN2, LOW);
+              vexRTickCount--;
+            else if (vexRTickCount > )
             break;
         case Approach:
             int count = 0;
