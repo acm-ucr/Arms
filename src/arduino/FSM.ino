@@ -1,5 +1,5 @@
 #include <Servo.h>
-#include <string>
+#include <String.h>
 
 Servo finger1;
 Servo finger2;
@@ -10,7 +10,7 @@ Servo vexP;
 int fingerPressureOne;
 int fingerPressureTwo;
 int fingerPressureThree;
-string pressureGrab;
+String pressureGrab;
 // vex motor definitions i think
 #define AIN1 11 // left bit for the pitch motor 10
 #define AIN2 12 // right bit for the pitch motor 01
@@ -19,6 +19,7 @@ string pressureGrab;
 #define BIN2 8 // right bit for the rotation motor 01
 
 // 00 for slow-stop, 01 for clockwise, 10 for counter-clockwise, 11 for hardstop
+enum States { Idle, Seek, Approach, Grip, Lift, MoveToDrop, Release } state;
 
 void setup(){ // commented parts are there due to uncertainty (its scary)
     Serial.begin(9600);
@@ -53,9 +54,10 @@ void setup(){ // commented parts are there due to uncertainty (its scary)
     digitalWrite(AIN2, LOW);
     digitalWrite(BIN1, LOW);
     digitalWrite(BIN2, LOW); // same idea for the bits
+
+    state = Idle;
 }
 
-enum States { Idle, Seek, Approach, Grip, Lift, MoveToDrop, Release } state;
 //PWM Pin 3,5,6,9,10,11
 //For the vex motor, the arduino conects to the driver
 //Pin D11 goes to PWMA and Pin D10 goes to PWMB
@@ -68,7 +70,7 @@ bool object_reached;
 bool pressure_reached[4];   //if 111 then all 3 fingers reached correct pressure
 bool reached_upright;   //arm is back in original position
 char buffer[5] = {0,0,0,0,0};  
-string bufferString;
+String bufferString;
 int vexPTickCount = 0; // for the release state
 int vexRTickCount = 0; // ^^^ clockwise increases the count while counter clockwise decreases the count
 // flags: 0x00
@@ -83,17 +85,29 @@ int curr_finger2_angle = 0; //
 int curr_finger3_angle = 0; //
 
 void Tick(){
+    Serial.print("State: ");
+    Serial.println(state);
+    
+    for(int i = 0; i < 5; i++){
+        buffer[i] = 0;    //convert to char array
+        bufferString = "";
+    }
     if(Serial.available() > 0){
           bufferString = Serial.readStringUntil('\n'); //reads from raspberry pi
-        }
+    }
+    Serial.flush();
     for(int i = 0; i < 5; i++){
         buffer[i] = bufferString[i];    //convert to char array
     }
+    for(int i = 0; i < 5; i++){
+        Serial.print(buffer[i]);
+    }
+    Serial.println("");
     switch(state){  //state transitions
         case Idle:
             startSignal = buffer[0];    //get the first bit from buffer
             if(startSignal){                //if true, move to seek state
-		            target_angle = Serial.readString().toInt();
+		            //target_angle = Serial.readString().toInt();
                 state = Seek;
             }else state = Idle;
             startSignal = 0; //reset startSignal
@@ -170,7 +184,13 @@ void Tick(){
         case Idle: // should do nothing, discuss this further if needed
             break;
         case Seek:
-            
+            if (vexRTickCount > 0){ // the object is centered in the camera
+              digitalWrite(AIN1, LOW); // counter-clockwise, HEAVILY CHECK THIS
+              digitalWrite(AIN2, HIGH); 
+              delay(25);
+              digitalWrite(AIN2, LOW);
+              vexRTickCount--;
+            else if (vexRTickCount > )
             break;
         case Approach:
             int count = 0;
@@ -226,8 +246,8 @@ void Tick(){
             fingerPressureThree = analogRead(A2);   //pressure for third
             
             //combine 3 pressure values into 1 string with a space in between and newline at end for cs team to read in
-            pressureGrab = std::to_string(fingerOne) + " " + std::to_string(fingerTwo) + " " + std::to_string(fingerThree) + "\n";
-            Serial.write(pressureGrab); //send value to cs team.
+            pressureGrab = String(fingerPressureOne) + " " + String(fingerPressureTwo) + " " + String(fingerPressureThree) + "\n";
+            Serial.println(pressureGrab); //send value to cs team.
 
             //curr_finger1_angle = finger1.read();
             //curr_finger2_angle = finger2.read();
@@ -245,7 +265,7 @@ void Tick(){
             break;
         case MoveToDrop:
             //potential code based off of if we are told the direction
-
+            int direction;
             if (direction == 1){ // clockwise
                 digitalWrite(AIN1, HIGH);
                 digitalWrite(AIN2, LOW);
@@ -282,9 +302,9 @@ void Tick(){
 
 
 void loop() {
-    state = Idle;
 
     Tick();
+    delay(250);
 }
 
 bool fixFingers(){
@@ -329,7 +349,7 @@ bool fixVexMotors(){
     digitalWrite(AIN1, LOW);
     digitalWrite(AIN2, LOW);
 
-    if (vexRtickount != 0){
+    if (vexRTickCount != 0){
         if (vexRTickCount > 0){ // going counter-clockwise to go to original position
             digitalWrite(BIN1, LOW);
             digitalWrite(BIN2, HIGH);
