@@ -122,6 +122,8 @@ void Tick(){
             obj_located = 0;
             break;
         case Approach:
+	    int palmPressure = analogRead(A4);
+	    Serial.println(palmPressure);
             object_reached = buffer[0];
             if (object_reached) {
                 state = Grip;    
